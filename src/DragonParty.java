@@ -44,71 +44,102 @@ public class DragonParty {
         //  Весь список собранных таким образом драконов - будет первым деревом связанных друзей.
         //  Затем нужно будет сделать тоже самое для всех прочих пар, которые не попали в предыдущие выборки.
 
-        func(dragonPairs, couplesNumber);
+
+        List <DragonPair> update = updateFunc(dragonPairs);
+
+        System.out.println(update);
 
         System.out.println("asa");
 
     }
 
-    public static int func(List<DragonPair> dragonPairList, int couples) throws NoSuchFieldException {
+//    Map<Integer, Set<Dragon>> dragonIdToDragonSetMap = new HashMap<>();
+    public static void func(DragonPair dragonPair, Set<Dragon> dragons, List<DragonPair> updateDragonList) throws NoSuchFieldException {
 
-        DragonTree dragonTree = new DragonTree(new HashSet<>());
-        Map<Integer, Set<Dragon>> dragonIdToDragonSetMap = new HashMap<>();
+        dragons.add(dragonPair.getLeft());
+        dragons.add(dragonPair.getRight());
 
-        for (int i = 0; i < dragonPairList.size(); i++) {
-
-            DragonPair firstDragonPair = dragonPairList.get(i);
-            Set<Dragon> currentSet = new HashSet<>();
-
-            for (int j = i + 1; j < dragonPairList.size(); j++) {
-                DragonPair secondDragonPair = dragonPairList.get(j);
-
-                if (firstDragonPair.intersects(secondDragonPair)) {
-                    if (firstDragonPair.getLeft() == secondDragonPair.getLeft()) {
-                        currentSet.add(firstDragonPair.getRight());
-                        currentSet.add(secondDragonPair.getRight());
-                        dragonIdToDragonSetMap.put(
-                                firstDragonPair.getLeft().getId(),
-                                currentSet);
-
-                    } else {
-                        currentSet.add(firstDragonPair.getLeft());
-                        currentSet.add(secondDragonPair.getLeft());
-                        dragonIdToDragonSetMap.put(
-                                firstDragonPair.getRight().getId(),
-                                currentSet);
-                    }
-
-                }
-
-//                System.out.println(currentSet);
-
-//                dragonIdToDragonSetMap.put(
-//                        firstDragonPair.getLeft().getId(),
-//                        currentSet
-//                );
-//
-//                dragonIdToDragonSetMap.put(
-//                        firstDragonPair.getRight().getId(),
-//                        currentSet
-//                );
-
+        for (Dragon dragon : dragons) {
+            if (dragon != dragonPair.getLeft() && dragon != dragonPair.getRight()) {
+                updateDragonList.add(new DragonPair(dragonPair.getLeft(), dragon));
+                updateDragonList.add(new DragonPair(dragonPair.getRight(), dragon));
 
             }
-
-
         }
-        // TODO сделать так, чтобы цифра игнорировала сама себя.
-        //  И чтобы видела своего соседа и тоже записывала его в хеш сет
-        //   сделать так, чтобы оно не повторялось
 
+    }
 
-        System.out.println(dragonIdToDragonSetMap);
+    public static List <DragonPair> updateFunc (List <DragonPair> dragonPairs) throws NoSuchFieldException {
+        Set <Dragon> dragonsSet = new HashSet<>();
+        List <DragonPair> updateDragonPairList = new ArrayList<>();
 
+        for (DragonPair dragonPair : dragonPairs) {
+             func(dragonPair, dragonsSet, updateDragonPairList);
+        }
 
-        return 0;
+        return updateDragonPairList;
     }
 }
+
+
+
+
+//
+//
+//        for (int i = 0; i < dragonPairList.size(); i++) {
+//
+//            dragonIdToDragonSetMap.put(i, new HashSet<>());
+//
+//            DragonPair firstDragonPair = dragonPairList.get(i);
+//            Set<Dragon> currentSet = new HashSet<>();
+//
+//
+//            for (int j = i + 1; j < dragonPairList.size(); j++) {
+//                DragonPair secondDragonPair = dragonPairList.get(j);
+//
+//                if (firstDragonPair.intersects(secondDragonPair)) {
+//                    if (firstDragonPair.getLeft() == secondDragonPair.getLeft()) {
+//                        currentSet.add(firstDragonPair.getRight());
+//                        currentSet.add(secondDragonPair.getRight());
+//                        dragonIdToDragonSetMap.put(i, currentSet);
+//
+//                    } else {
+//                        currentSet.add(firstDragonPair.getLeft());
+//                        currentSet.add(secondDragonPair.getLeft());
+//                        dragonIdToDragonSetMap.put(i, currentSet);
+//                    }
+//
+//                }
+//
+//
+////                System.out.println(currentSet);
+//
+////                dragonIdToDragonSetMap.put(
+////                        firstDragonPair.getLeft().getId(),
+////                        currentSet
+////                );
+////
+////                dragonIdToDragonSetMap.put(
+////                        firstDragonPair.getRight().getId(),
+////                        currentSet
+////                );
+//
+//
+//            }
+//
+//
+//        }
+//        // TODO сделать так, чтобы цифра игнорировала сама себя.
+//        //  И чтобы видела своего соседа и тоже записывала его в хеш сет
+//        //   сделать так, чтобы оно не повторялось
+//
+//
+//        System.out.println(dragonIdToDragonSetMap);
+//
+//
+//        return 0;
+//    }
+
 
 class DragonTree {
     private final Set<Dragon> dragons; // опять создать мапу с ключом id и значением сет драгонс
@@ -147,6 +178,14 @@ class DragonPair {
         }
         return false;
 
+    }
+
+    @Override
+    public String toString() {
+        return "DragonPair{" +
+                "left=" + left +
+                ", right=" + right +
+                '}';
     }
 }
 
@@ -195,3 +234,4 @@ class Dragon {
         return Objects.hash(id, interesting, gluttony);
     }
 }
+
