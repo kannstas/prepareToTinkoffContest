@@ -1,4 +1,6 @@
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class DragonParty {
     public static void main(String[] args) throws NoSuchFieldException {
@@ -45,90 +47,136 @@ public class DragonParty {
         //  Затем нужно будет сделать тоже самое для всех прочих пар, которые не попали в предыдущие выборки.
 
 
-//        System.out.println(updateFunc(dragonPairs));
-
-        func(dragonPairs);
+        reflectFunc(dragonPairs);
 
 
     }
 
-
-    public static void func(List<DragonPair> dragonPairList) throws NoSuchFieldException {
+    public static void reflectFunc(List<DragonPair> dragonPairs) {
         Map<Integer, Set<Dragon>> dragonIdToDragonSetMap = new HashMap<>();
+        Map<Integer, Set <Dragon>> updateIdToDragonSetWithJoinSetDragonFriendsMap = new HashMap<>();
+        DragonTree dragonTree = new DragonTree(new HashSet<>());
+        Set <Dragon> test = new HashSet<>();
+
+        for (int i = 0; i < dragonPairs.size(); i++) {
+            func(dragonPairs.get(i), dragonPairs, dragonIdToDragonSetMap);
+        }
+
+        for (DragonPair dragonPair : dragonPairs) {
+
+            test = dragonIdToDragonSetMap.get(dragonPair.getLeft().getId());
+            test.addAll(dragonIdToDragonSetMap.get(dragonPair.getRight().getId()));
+
+            Set<Dragon> newTest = new HashSet<>();
+            for (Dragon dragon : test) {
+                if (dragonIdToDragonSetMap.containsKey(dragon.getId()))
+                    newTest.addAll(dragonIdToDragonSetMap.get(dragon.getId()));
+            }
+            test.addAll(newTest);
 
 
-        for (int i = 0; i < dragonPairList.size(); i++) {
 
-            DragonPair firstDragonPair = dragonPairList.get(i);
-            Set<Dragon> currentSet = new HashSet<>();
+            if (test.contains(dragonPair.getLeft())) {
+                Set <Dragon> copySet = new HashSet<>();
+                copySet.addAll(test);
+                copySet.remove(dragonPair.getLeft());
 
-            for (int j = i + 1; j < dragonPairList.size(); j++) {
-
-                DragonPair secondDragonPair = dragonPairList.get(j);
-                if (firstDragonPair.intersects(secondDragonPair)) {
-                    if (firstDragonPair.getLeft() == secondDragonPair.getLeft()) {
-                        currentSet.add(firstDragonPair.getRight());
-                        currentSet.add(secondDragonPair.getRight());
-
-                    } else if (firstDragonPair.getLeft() == secondDragonPair.getRight()) {
-                        currentSet.add(firstDragonPair.getRight());
-                        currentSet.add(secondDragonPair.getLeft());
-
-                    } else if (firstDragonPair.getRight() == secondDragonPair.getRight()) {
-                        currentSet.add(firstDragonPair.getLeft());
-                        currentSet.add(secondDragonPair.getLeft());
-                    } else if (firstDragonPair.getRight() == secondDragonPair.getLeft()) {
-                        currentSet.add(firstDragonPair.getLeft());
-                        currentSet.add(secondDragonPair.getRight());
-                    }
-
-
-                }
+                updateIdToDragonSetWithJoinSetDragonFriendsMap.put(
+                        dragonPair.getLeft().getId(),
+                        copySet
+                );
 
             }
 
+            if (test.contains(dragonPair.getRight())){
+                Set <Dragon> copySet = new HashSet<>();
+                copySet.addAll(test);
+                copySet.remove(dragonPair.getRight());
 
-            if (!(dragonIdToDragonSetMap.containsKey(firstDragonPair.getRight().getId())) &&
-                    !(dragonIdToDragonSetMap.containsKey(firstDragonPair.getLeft().getId()))) {
+                updateIdToDragonSetWithJoinSetDragonFriendsMap.put(
+                        dragonPair.getRight().getId(),
+                        copySet
+                );
 
-                dragonIdToDragonSetMap.put(
-                        firstDragonPair.getLeft().getId(),
-                        currentSet);
 
-                dragonIdToDragonSetMap.put(
-                        firstDragonPair.getRight().getId(),
-                        currentSet);
 
             }
+
 
         }
 
-        System.out.println(dragonIdToDragonSetMap);
-
+        System.out.println("fpfpfp");
     }
+
+
+
+
+    public static void func(DragonPair dragonPair, List<DragonPair> dragonPairList, Map<Integer, Set<Dragon>> dragonIdToDragonSetMap) {
+        Set<Dragon> dragonSet = new HashSet<>();
+
+        for (DragonPair pair : dragonPairList) {
+            if (pair.intersects(dragonPair)) {
+                dragonSet.add(pair.getLeft());
+                dragonSet.add(pair.getRight());
+            }
+        }
+
+        if (!(dragonIdToDragonSetMap.containsKey(dragonPair.getLeft().getId()))) { // проверки нужны по той причине, что в Map уже может быть такой же ключ,
+            // а если не сделать проверку, то он обновит ключ, и выбросит все прошлые значения, которые там лежали
+            dragonIdToDragonSetMap.put(
+                    dragonPair.getLeft().getId(),
+                    checkId(dragonPair.getLeft(), dragonSet)
+            );
+
+
+        }
+        if (!(dragonIdToDragonSetMap.containsKey(dragonPair.getRight().getId()))) { // проверки разделены, потому что если использовать ||
+            // то повторяющийся ключ все еще может проскочить, если && то из-за повторяющегося ключа не запишется второе значение,
+            // которое стоит справа (а его еще может и не быть в Map)
+            dragonIdToDragonSetMap.put(
+                    dragonPair.getRight().getId(),
+                    checkId(dragonPair.getRight(), dragonSet)
+            );
+
+
+        }
+
+
+        // TODO мб сделать проверку на ключи выше, чтобы если что не так, алгоритм не прокручивался
+    }
+
+    public static Set<Dragon> checkId(Dragon dragon, Set<Dragon> dragonSet) {
+
+        if (dragonSet.contains(dragon)) {
+            Set<Dragon> updateDragonSet = new HashSet<>();
+            updateDragonSet.addAll(dragonSet);
+            updateDragonSet.remove(dragon);
+            return updateDragonSet;
+        }
+        return dragonSet;
+    }
+// TODO сделать так, чтобы цифра игнорировала сама себя. +
+//  И чтобы видела своего соседа и тоже записывала его в хеш сет ?
+//   сделать так, чтобы оно не повторялось +
+
 }
-
-//        // TODO сделать так, чтобы цифра игнорировала сама себя.
-//        //  И чтобы видела своего соседа и тоже записывала его в хеш сет
-//        //   сделать так, чтобы оно не повторялось
-//
-//
-//        System.out.println(dragonIdToDragonSetMap);
-//
-//
-//        return 0;
-//    }
-
 
 class DragonTree {
     private final Set<Dragon> dragons; // опять создать мапу с ключом id и значением сет драгонс
 
-    DragonTree(Set<Dragon> dragons) {
+    public DragonTree(Set<Dragon> dragons) {
         this.dragons = dragons;
     }
 
     public Set<Dragon> getDragons() {
         return dragons;
+    }
+
+    @Override
+    public String toString() {
+        return "DragonTree{" +
+                "dragons=" + dragons +
+                '}';
     }
 }
 
@@ -212,4 +260,5 @@ class Dragon {
         return Objects.hash(id, interesting, gluttony);
     }
 }
+
 
