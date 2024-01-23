@@ -32,7 +32,8 @@ public class Main {
             if (counterOfDay <= gift.getTheLastDayOfSendingTheGift()) {
                int currentSendDay =  Math.max(dayOfSendingTheLastGift, gift.getTheLastDayOfSendingTheGift() - (gift.getDayTheMaterialsArrived()+ gift.getTimeToPrepareAGift()));
                 listWithDays.add(currentSendDay);
-                counterOfDay = currentSendDay + gift.getTimeToPrepareAGift();
+                counterOfDay = currentSendDay  + gift.getTimeToPrepareAGift();
+                dayOfSendingTheLastGift = counterOfDay;
                 if (counterOfDay == currentSendDay) {
                     return "NO";
                 }
