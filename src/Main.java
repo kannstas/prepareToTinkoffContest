@@ -1,11 +1,5 @@
 import java.util.*;
 
-// ПОДУМАТЬ ЕЩЕ НЕ КОРРЕКТНО РАБОТАЕТ
-// 4
-//1 1 4
-//1 1 4
-//1 1 4
-//1 1 4
 public class Main {
     public static void main(String[] args) {
 
@@ -21,34 +15,46 @@ public class Main {
         listOfGifts.sort(Comparator.comparing(Gift::getTheLastDayOfSendingTheGift).thenComparing(Gift::getTimeToPrepareAGift));
 
         System.out.println(checkPreparedGifts(listOfGifts));
+
     }
 
     public static String checkPreparedGifts(List<Gift> giftList) {
-        List<Integer> listWithDays = new ArrayList<>();
+        List<Integer> listWithDaysOfSendingGifts = new ArrayList<>();
 
         int counterOfDay = 1;
-        int dayOfSendingTheLastGift= 0;
+        int dayOfSendingTheLastGift = 0;
         for (Gift gift : giftList) {
+
+
+
+
+
+
+
             if (counterOfDay <= gift.getTheLastDayOfSendingTheGift()) {
-               int currentSendDay =  Math.max(dayOfSendingTheLastGift, gift.getTheLastDayOfSendingTheGift() - (gift.getDayTheMaterialsArrived()+ gift.getTimeToPrepareAGift()));
-                listWithDays.add(currentSendDay);
-                counterOfDay = currentSendDay  + gift.getTimeToPrepareAGift();
-                dayOfSendingTheLastGift = counterOfDay;
+
+                int currentSendDay = Math.min(gift.getTheLastDayOfSendingTheGift(), (gift.getDayTheMaterialsArrived() + gift.getTimeToPrepareAGift()));
+                listWithDaysOfSendingGifts.add(currentSendDay);
+
+                if (listWithDaysOfSendingGifts.contains(currentSendDay)) {
+                    // ЧЕРЕЗ WHILE
+                    int difference = gift.getTheLastDayOfSendingTheGift() - (gift.getDayTheMaterialsArrived() + gift.getTimeToPrepareAGift());
+                    int firstNumber = 0;
+                    while (firstNumber > difference) {
+                        currentSendDay++;
+                        listWithDaysOfSendingGifts.add(currentSendDay);
+                    }
+
+                }
+
+//                dayOfSendingTheLastGift = currentSendDay + gift.getTimeToPrepareAGift();
+//                counterOfDay = dayOfSendingTheLastGift;
+//                listWithDaysOfSendingGifts.add(dayOfSendingTheLastGift);
+
                 if (counterOfDay == currentSendDay) {
                     return "NO";
                 }
-//
-//               if (currentSendDay > dayOfSendingTheLastGift) {
-//                   dayOfSendingTheLastGift = currentSendDay;
-//                   counterOfDay = currentSendDay + gift.getTimeToPrepareAGift();
-//               }
-//               else {
-//                   counterOfDay += gift.getTimeToPrepareAGift();
-//               }
 
-
-
-                System.out.println(listWithDays);
             } else {
                 return "NO";
             }
@@ -59,7 +65,7 @@ public class Main {
 
 
 }
-// нужен цикл и массив, в который будет записываться дни
+
 
 
 class Gift {
