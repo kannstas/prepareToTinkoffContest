@@ -1,4 +1,6 @@
 import java.util.*;
+import java.util.stream.Collectors;
+
 
 public class RabbitBooks {
     public static void main(String[] args) {
@@ -27,15 +29,16 @@ public class RabbitBooks {
         }
 
         int minNumbersOfStacks = heightOfBookToNumberOfSuchBooks.keySet().size();
-        List <Integer> sortedHeightsOfBooks = heightOfBookToNumberOfSuchBooks.values().stream()
+
+        String sortedHeightsOfBooks = heightOfBookToNumberOfSuchBooks.values().stream()
                 .sorted()
-                .toList();
+                .map(String::valueOf)
+                .collect(Collectors.joining(" "));
+
 
         System.out.println(minNumbersOfStacks);
+        System.out.println(sortedHeightsOfBooks);
 
-        for (Integer sortedHeightsOfBook : sortedHeightsOfBooks) {
-            System.out.print(sortedHeightsOfBook + " ");
-        }
 
     }
 }
