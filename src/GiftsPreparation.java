@@ -1,42 +1,47 @@
+
 import java.util.*;
 
 public class GiftsPreparation {
     public static void main(String[] args) {
 
-        List<Gift> listOfGifts = new ArrayList<>();
-
         Scanner in = new Scanner(System.in);
         int numberOfGifts = in.nextInt();
+
+        List<Gift> listOfGifts = new ArrayList<>();
 
         for (int i = 0; i < numberOfGifts; i++) {
             listOfGifts.add(new Gift(in.nextInt(), in.nextInt(), in.nextInt()));
         }
 
-        listOfGifts.sort(Comparator.comparing(Gift::getTheLastDayOfSendingTheGift).thenComparing(Gift::getTimeToPrepareAGift));
+        listOfGifts.sort(
+                Comparator.comparing((gift) -> gift.getTheLastDayOfSendingTheGift() -
+                        (gift.getDayTheMaterialsArrived() + gift.getTimeToPrepareAGift())
+                )
+//                Comparator.comparing(Gift::getTheLastDayOfSendingTheGift)
+//                        .thenComparing(Gift::getTimeToPrepareAGift)
+        );
 
         String readyAnswer = checkTheReadinessOfTheGifts(listOfGifts);
 
         System.out.println(readyAnswer);
-
     }
 
-
     public static String checkTheReadinessOfTheGifts(List<Gift> giftList) {
-        List<Integer> listWithDaysOfSendingGifts = new ArrayList<>();
+        Set<Integer> scheduledDaysToSendGiftsSet = new HashSet<>();
 
         for (Gift gift : giftList) {
             int giftSendDay = gift.getDayTheMaterialsArrived() + gift.getTimeToPrepareAGift();
 
-            if (listWithDaysOfSendingGifts.contains(giftSendDay)) {
-                while (listWithDaysOfSendingGifts.contains(giftSendDay) || giftSendDay > gift.getTheLastDayOfSendingTheGift()) {
+            if (scheduledDaysToSendGiftsSet.contains(giftSendDay)) {
+                while (scheduledDaysToSendGiftsSet.contains(giftSendDay)) {
                     giftSendDay++;
-                }
-                if (giftSendDay > gift.getTheLastDayOfSendingTheGift()) {
-                    return "NO";
+                    if (giftSendDay > gift.getTheLastDayOfSendingTheGift()) {
+                        return "NO";
+                    }
                 }
             }
 
-            listWithDaysOfSendingGifts.add(giftSendDay);
+            scheduledDaysToSendGiftsSet.add(giftSendDay);
         }
 
         return "YES";
@@ -44,9 +49,9 @@ public class GiftsPreparation {
 }
 
 class Gift {
-    private int dayTheMaterialsArrived;
-    private int timeToPrepareAGift;
-    private int theLastDayOfSendingTheGift;
+    private int dayTheMaterialsArrived; // materialsArrivingDay
+    private int timeToPrepareAGift; // daysToPrepare
+    private int theLastDayOfSendingTheGift; // milestoneToSendGift
 
     public Gift(int dayTheMaterialsArrived, int timeToPrepareAGift, int theLastDayOfSendingTheGift) {
         this.dayTheMaterialsArrived = dayTheMaterialsArrived;
