@@ -1,9 +1,10 @@
+
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
 
 public class DragonParty {
-    public static void main(String[] args) throws NoSuchFieldException {
+
+    public static void main(String[] args) {
 
         Scanner in = new Scanner(System.in);
         String[] params = in.nextLine().split(" ");
@@ -11,12 +12,12 @@ public class DragonParty {
         int couplesNumber = Integer.parseInt(params[1]);
         int maxGluttonySum = Integer.parseInt(params[2]);
 
+
         String[] interestingArray = in.nextLine().split(" ");
         String[] gluttonyArray = in.nextLine().split(" ");
 
         final Map<Integer, Dragon> dragonIdToDragonMap = new HashMap<>();
         final List<DragonPair> dragonPairs = new ArrayList<>();
-
         for (int i = 0; i < numberOfFriends; i++) {
             dragonIdToDragonMap.put(
                     i + 1,
@@ -25,195 +26,217 @@ public class DragonParty {
                             Integer.parseInt(interestingArray[i]),
                             Integer.parseInt(gluttonyArray[i])
                     ));
+
         }
 
-        for (int i = 1; i <= couplesNumber; i++) {
-            List<Integer> dragonIdPair = Arrays.stream(in.nextLine().split(" "))
-                    .map(Integer::parseInt)
-                    .sorted(Comparator.reverseOrder()).toList();
+        for (int i = 0; i < couplesNumber; i++) {
+            String[] pairRawArray = in.nextLine().split(" ");
 
             dragonPairs.add(new DragonPair(
-                    dragonIdToDragonMap.get(dragonIdPair.get(0)),
-                    dragonIdToDragonMap.get(dragonIdPair.get(1))));
+                    dragonIdToDragonMap.get(Integer.parseInt(pairRawArray[0])),
+                    dragonIdToDragonMap.get(Integer.parseInt(pairRawArray[1]))
+            ));
+
         }
 
 
-        // TODO надо пройтись по списку dragonPairs рекурсивно.
-        //  Для каждого участника пары, требуется найти все прочие упоминания этого участника в других парах.
-        //  (в каждом таком упоминании будет один новый участник)
-        //  Затем таким же образом нужно найти упоминания для новых участников, пропуская повторы.
-        //  Повторять это до тех пока не закончат встречаться новые участники.
-        //  Весь список собранных таким образом драконов - будет первым деревом связанных друзей.
-        //  Затем нужно будет сделать тоже самое для всех прочих пар, которые не попали в предыдущие выборки.
+        List<DragonGroup> sortedDragonGroups = findDragonFriends(dragonPairs).stream()
+                .map(dragonIds -> toDragonGroup(dragonIds, dragonIdToDragonMap))
+                .filter(dragonGroup -> dragonGroup.gluttonySum <= maxGluttonySum)
+                .sorted(DESCENDING_COMPARATOR)
+                .toList();
 
+        if (sortedDragonGroups.isEmpty()) {
+            System.out.println(0);
+        }
 
-        reflectFunc(dragonPairs);
-
-
+        int maxInteresting = calculateMaxInterestingRecursively(sortedDragonGroups, maxGluttonySum);
+        System.out.println(maxInteresting);
     }
 
-    public static void reflectFunc(List<DragonPair> dragonPairs) {
-        Map<Integer, Set<Dragon>> dragonIdToDragonSetMap = new HashMap<>();
-        Map<Integer, Set <Dragon>> updateIdToDragonSetWithJoinSetDragonFriendsMap = new HashMap<>();
-        DragonTree dragonTree = new DragonTree(new HashSet<>());
-        Set <Dragon> test = new HashSet<>();
+    // самый простой вариант, работает правильно только для малого количества кейсов
+    private static int calculateMaxInteresting(final List<DragonGroup> sortedDragonGroups,
+                                               int maxGluttonySum) {
+        int interestingAccumulator = 0;
+        int gluttonyAccumulator = 0;
 
-        for (int i = 0; i < dragonPairs.size(); i++) {
-            func(dragonPairs.get(i), dragonPairs, dragonIdToDragonSetMap);
+        for (DragonGroup dragonGroup : sortedDragonGroups) {
+            int newGluttony = gluttonyAccumulator + dragonGroup.gluttonySum;
+
+            if (newGluttony == maxGluttonySum) {
+                return interestingAccumulator + dragonGroup.interestingSum();
+            } else if (newGluttony > maxGluttonySum) {
+                continue;
+            } else {
+                gluttonyAccumulator = newGluttony;
+                interestingAccumulator = interestingAccumulator + dragonGroup.interestingSum();
+            }
         }
 
-        for (DragonPair dragonPair : dragonPairs) {
+        return interestingAccumulator;
+    }
 
-            test = dragonIdToDragonSetMap.get(dragonPair.getLeft().getId());
-            test.addAll(dragonIdToDragonSetMap.get(dragonPair.getRight().getId()));
+    // for testing
+    public static void test(String[] args) {
+        ArrayList<DragonGroup> dragonGroups = new ArrayList<>();
 
-            Set<Dragon> newTest = new HashSet<>();
-            for (Dragon dragon : test) {
-                if (dragonIdToDragonSetMap.containsKey(dragon.getId()))
-                    newTest.addAll(dragonIdToDragonSetMap.get(dragon.getId()));
+        dragonGroups.add(new DragonGroup(10, 100));
+
+        dragonGroups.add(new DragonGroup(3, 29));
+        dragonGroups.add(new DragonGroup(3, 29));
+        dragonGroups.add(new DragonGroup(3, 29));
+        dragonGroups.add(new DragonGroup(3, 29));
+
+        dragonGroups.add(new DragonGroup(2, 1));
+
+
+//        int result = calculateMaxInteresting(
+//                dragonGroups.stream().sorted(DESCENDING_COMPARATOR).toList(), 12
+//        );
+//        System.out.println("Common result: " + result);
+
+        int resultRecursively = calculateMaxInterestingRecursively(
+                dragonGroups.stream().sorted(DESCENDING_COMPARATOR).toList(), 12
+        );
+        System.out.println("Recursion result: " + resultRecursively);
+    }
+
+    private static int calculateMaxInterestingRecursively(final List<DragonGroup> sortedDragonGroups,
+                                                          int maxGluttonySum) {
+        int maxInteresting = 0;
+
+        for (int i = 0; i < sortedDragonGroups.size(); i++) {
+            int possibleMaxInteresting = findAllPossibleOptions(
+                    sortedDragonGroups, maxGluttonySum, new HashSet<>(), i, 0, 0
+            );
+
+            if (possibleMaxInteresting > maxInteresting) {
+                maxInteresting = possibleMaxInteresting;
             }
-            test.addAll(newTest);
-
-
-
-            if (test.contains(dragonPair.getLeft())) {
-                Set <Dragon> copySet = new HashSet<>();
-                copySet.addAll(test);
-                copySet.remove(dragonPair.getLeft());
-
-                updateIdToDragonSetWithJoinSetDragonFriendsMap.put(
-                        dragonPair.getLeft().getId(),
-                        copySet
-                );
-
-            }
-
-            if (test.contains(dragonPair.getRight())){
-                Set <Dragon> copySet = new HashSet<>();
-                copySet.addAll(test);
-                copySet.remove(dragonPair.getRight());
-
-                updateIdToDragonSetWithJoinSetDragonFriendsMap.put(
-                        dragonPair.getRight().getId(),
-                        copySet
-                );
-
-
-
-            }
-
-
         }
 
-        System.out.println("fpfpfp");
+        return maxInteresting;
+    }
+
+    // returns interest
+    private static int findAllPossibleOptions(final List<DragonGroup> sortedDragonGroups,
+                                              final int maxGluttonySum,
+                                              final Set<Integer> visitedIndexes,
+                                              final int startPosition,
+                                              int currentGluttony,
+                                              int currentInteresting) {
+
+        System.out.println("Start position: " + startPosition);
+        System.out.println("Visited indexes: " + visitedIndexes);
+        visitedIndexes.add(startPosition);
+        currentGluttony = currentGluttony + sortedDragonGroups.get(startPosition).gluttonySum();
+
+        if (currentGluttony > maxGluttonySum) {
+            System.out.printf("currentGluttony > maxGluttonySum - Visited indexes: %s. Current gluttony: %d. Current interesting: %d%n",
+                    visitedIndexes, currentGluttony, currentInteresting);
+            return -1;
+        }
+
+        currentInteresting = currentInteresting + sortedDragonGroups.get(startPosition).interestingSum();
+        if (currentGluttony == maxGluttonySum) {
+            System.out.printf("currentGluttony == maxGluttonySum - Visited indexes: %s. Current gluttony: %d. Current interesting: %d%n",
+                    visitedIndexes, currentGluttony, currentInteresting);
+            return currentInteresting;
+        }
+
+        for (int i = 0; i < sortedDragonGroups.size(); i++) {
+            if (visitedIndexes.contains(i)) continue;
+
+            int result = findAllPossibleOptions(
+                    sortedDragonGroups, maxGluttonySum, visitedIndexes, i, currentGluttony, currentInteresting
+            );
+            if (result != -1) return result;
+        }
+
+        System.out.printf("FINISHED FOR - Visited indexes: %s. Current gluttony: %d. Current interesting: %d%n",
+                visitedIndexes, currentGluttony, currentInteresting);
+        return currentInteresting;
+    }
+
+    private static final Comparator<DragonGroup> DESCENDING_COMPARATOR = Comparator
+            .comparing(DragonGroup::coefficient)
+            .reversed();
+
+    private static DragonGroup toDragonGroup(final Set<Integer> dragonIds,
+                                             final Map<Integer, Dragon> dragonIdToDragonMap) {
+        int interestingAccumulator = 0;
+        int gluttonyAccumulator = 0;
+
+        for (Integer dragonId : dragonIds) {
+            Dragon dragon = dragonIdToDragonMap.get(dragonId);
+            interestingAccumulator = interestingAccumulator + dragon.getInteresting();
+            gluttonyAccumulator = gluttonyAccumulator + dragon.getGluttony();
+        }
+
+        return new DragonGroup(
+                gluttonyAccumulator,
+                interestingAccumulator
+        );
+    }
+
+    private record DragonGroup(int gluttonySum,
+                               int interestingSum) {
+
+        public double coefficient() {
+            return (double) interestingSum / gluttonySum;
+        }
     }
 
 
+    public static List<Set<Integer>> findDragonFriends(List<DragonPair> dragonPairs) {
 
+        Map<Integer, Set<Dragon>> dragonIdToSetWithDragons = new HashMap<>();
 
-    public static void func(DragonPair dragonPair, List<DragonPair> dragonPairList, Map<Integer, Set<Dragon>> dragonIdToDragonSetMap) {
-        Set<Dragon> dragonSet = new HashSet<>();
-
-        for (DragonPair pair : dragonPairList) {
-            if (pair.intersects(dragonPair)) {
-                dragonSet.add(pair.getLeft());
-                dragonSet.add(pair.getRight());
-            }
-        }
-
-        if (!(dragonIdToDragonSetMap.containsKey(dragonPair.getLeft().getId()))) { // проверки нужны по той причине, что в Map уже может быть такой же ключ,
-            // а если не сделать проверку, то он обновит ключ, и выбросит все прошлые значения, которые там лежали
-            dragonIdToDragonSetMap.put(
+        dragonPairs.forEach(dragonPair -> {
+            dragonIdToSetWithDragons.computeIfAbsent(
                     dragonPair.getLeft().getId(),
-                    checkId(dragonPair.getLeft(), dragonSet)
-            );
-
-
-        }
-        if (!(dragonIdToDragonSetMap.containsKey(dragonPair.getRight().getId()))) { // проверки разделены, потому что если использовать ||
-            // то повторяющийся ключ все еще может проскочить, если && то из-за повторяющегося ключа не запишется второе значение,
-            // которое стоит справа (а его еще может и не быть в Map)
-            dragonIdToDragonSetMap.put(
+                    key -> new HashSet<>()
+            ).add(dragonPair.getRight());
+            dragonIdToSetWithDragons.computeIfAbsent(
                     dragonPair.getRight().getId(),
-                    checkId(dragonPair.getRight(), dragonSet)
-            );
+                    key -> new HashSet<>()
+            ).add(dragonPair.getLeft());
+        });
 
+        Set<Integer> visitedDragon = new HashSet<>();
+        List<Set<Integer>> connectedDragonFriendsList = new ArrayList<>();
 
+        for (Integer dragonId : dragonIdToSetWithDragons.keySet()) {
+            if (!(visitedDragon.contains(dragonId))) {
+                Set<Integer> connectedDragonFriendsSet = new HashSet<>();
+                findDragonFriendsRecursively(dragonId, dragonIdToSetWithDragons, visitedDragon, connectedDragonFriendsSet);
+                connectedDragonFriendsList.add(connectedDragonFriendsSet);
+
+            }
+        }
+        return connectedDragonFriendsList;
+    }
+
+    public static void findDragonFriendsRecursively(int dragonId,
+                                                    Map<Integer, Set<Dragon>> dragonIdToSetWithDragons,
+                                                    Set<Integer> visitedDragon,
+                                                    Set<Integer> connectedDragonFriendsSet) {
+
+        visitedDragon.add(dragonId);
+
+        connectedDragonFriendsSet.add(dragonId);
+
+        Set<Dragon> dragonFriends = dragonIdToSetWithDragons.getOrDefault(dragonId, Collections.emptySet());
+
+        for (Dragon dragonFriend : dragonFriends) {
+            if (!(visitedDragon.contains(dragonFriend.getId()))) {
+                findDragonFriendsRecursively(dragonFriend.getId(), dragonIdToSetWithDragons, visitedDragon, connectedDragonFriendsSet);
+            }
         }
 
-
-        // TODO мб сделать проверку на ключи выше, чтобы если что не так, алгоритм не прокручивался
-    }
-
-    public static Set<Dragon> checkId(Dragon dragon, Set<Dragon> dragonSet) {
-
-        if (dragonSet.contains(dragon)) {
-            Set<Dragon> updateDragonSet = new HashSet<>();
-            updateDragonSet.addAll(dragonSet);
-            updateDragonSet.remove(dragon);
-            return updateDragonSet;
-        }
-        return dragonSet;
-    }
-// TODO сделать так, чтобы цифра игнорировала сама себя. +
-//  И чтобы видела своего соседа и тоже записывала его в хеш сет ?
-//   сделать так, чтобы оно не повторялось +
-
-}
-
-class DragonTree {
-    private final Set<Dragon> dragons; // опять создать мапу с ключом id и значением сет драгонс
-
-    public DragonTree(Set<Dragon> dragons) {
-        this.dragons = dragons;
-    }
-
-    public Set<Dragon> getDragons() {
-        return dragons;
-    }
-
-    @Override
-    public String toString() {
-        return "DragonTree{" +
-                "dragons=" + dragons +
-                '}';
     }
 }
 
-
-class DragonPair {
-    private final Dragon left;
-    private final Dragon right;
-
-    public DragonPair(Dragon left, Dragon right) {
-        this.left = left;
-        this.right = right;
-    }
-
-    public Dragon getLeft() {
-        return left;
-    }
-
-    public Dragon getRight() {
-        return right;
-    }
-
-    public boolean intersects(DragonPair other) {
-        if (this.left != null && this.right != null && other.left != null && other.right != null) {
-            return this.left == other.left || this.left == other.right ||
-                    this.right == other.left || this.right == other.right;
-        }
-        return false;
-    }
-
-    @Override
-    public String toString() {
-        return "DragonPair{" +
-                "left=" + left +
-                ", right=" + right +
-                '}';
-    }
-}
 
 class Dragon {
     private final int id;
@@ -260,5 +283,39 @@ class Dragon {
         return Objects.hash(id, interesting, gluttony);
     }
 }
+
+class DragonPair {
+    private final Dragon left;
+    private final Dragon right;
+
+    public DragonPair(Dragon first, Dragon second) {
+        if (first.getId() > second.getId()) {
+            this.left = second;
+            this.right = first;
+        } else {
+            this.left = first;
+            this.right = second;
+        }
+    }
+
+    public Dragon getLeft() {
+        return left;
+    }
+
+    public Dragon getRight() {
+        return right;
+    }
+
+    @Override
+    public String toString() {
+        return "DragonPair{" +
+                "left=" + left +
+                ", right=" + right +
+                '}';
+    }
+}
+
+
+
 
 

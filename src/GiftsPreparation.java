@@ -14,8 +14,8 @@ public class GiftsPreparation {
         }
 
         listOfGifts.sort(
-                Comparator.comparing((gift) -> gift.getTheLastDayOfSendingTheGift() -
-                        (gift.getDayTheMaterialsArrived() + gift.getTimeToPrepareAGift())
+                Comparator.comparing((gift) -> gift.getMilestoneToSendGift() -
+                        (gift.getMaterialsArrivingDay() + gift.getDaysToPrepare())
                 )
 //                Comparator.comparing(Gift::getTheLastDayOfSendingTheGift)
 //                        .thenComparing(Gift::getTimeToPrepareAGift)
@@ -27,15 +27,19 @@ public class GiftsPreparation {
     }
 
     public static String checkTheReadinessOfTheGifts(List<Gift> giftList) {
+
         Set<Integer> scheduledDaysToSendGiftsSet = new HashSet<>();
 
         for (Gift gift : giftList) {
-            int giftSendDay = gift.getDayTheMaterialsArrived() + gift.getTimeToPrepareAGift();
+            int giftSendDay = gift.getMaterialsArrivingDay() + gift.getDaysToPrepare();
 
+            if (giftSendDay > gift.getMilestoneToSendGift()) {
+                return "NO";
+            }
             if (scheduledDaysToSendGiftsSet.contains(giftSendDay)) {
                 while (scheduledDaysToSendGiftsSet.contains(giftSendDay)) {
                     giftSendDay++;
-                    if (giftSendDay > gift.getTheLastDayOfSendingTheGift()) {
+                    if (giftSendDay > gift.getMilestoneToSendGift()) {
                         return "NO";
                     }
                 }
@@ -49,26 +53,26 @@ public class GiftsPreparation {
 }
 
 class Gift {
-    private int dayTheMaterialsArrived; // materialsArrivingDay
-    private int timeToPrepareAGift; // daysToPrepare
-    private int theLastDayOfSendingTheGift; // milestoneToSendGift
+    private int materialsArrivingDay;
+    private int daysToPrepare;
+    private int milestoneToSendGift;
 
-    public Gift(int dayTheMaterialsArrived, int timeToPrepareAGift, int theLastDayOfSendingTheGift) {
-        this.dayTheMaterialsArrived = dayTheMaterialsArrived;
-        this.timeToPrepareAGift = timeToPrepareAGift;
-        this.theLastDayOfSendingTheGift = theLastDayOfSendingTheGift;
+    public Gift(int materialsArrivingDay, int daysToPrepare, int milestoneToSendGift) {
+        this.materialsArrivingDay = materialsArrivingDay;
+        this.daysToPrepare = daysToPrepare;
+        this.milestoneToSendGift = milestoneToSendGift;
     }
 
-    public int getDayTheMaterialsArrived() {
-        return dayTheMaterialsArrived;
+    public int getMaterialsArrivingDay() {
+        return materialsArrivingDay;
     }
 
-    public int getTimeToPrepareAGift() {
-        return timeToPrepareAGift;
+    public int getDaysToPrepare() {
+        return daysToPrepare;
     }
 
-    public int getTheLastDayOfSendingTheGift() {
-        return theLastDayOfSendingTheGift;
+    public int getMilestoneToSendGift() {
+        return milestoneToSendGift;
     }
 
 }

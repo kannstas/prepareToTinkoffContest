@@ -1,7 +1,5 @@
-
 import java.util.*;
 import java.util.stream.Collectors;
-
 
 public class RabbitBooks {
     public static void main(String[] args) {
